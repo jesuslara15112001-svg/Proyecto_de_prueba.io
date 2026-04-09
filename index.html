@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Sistema de Inventario y Ventas</title>
+
+    <!-- BOOTSTRAP 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background: #f5f6fa;
+        }
+        .card {
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .table thead {
+            background: #e9ecef;
+        }
+        .btn-sm {
+            padding: 3px 8px;
+        }
+        .titulo {
+            font-weight: 700;
+            color: #2c3e50;
+        }
+    </style>
+</head>
+<body class="container py-4">
+
+    <h1 class="text-center titulo mb-4">Sistema de Inventario y Ventas</h1>
+
+    <!-- INVENTARIO -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Inventario</h5>
+        </div>
+        <div class="card-body">
+
+            <!-- BUSCADOR INTELIGENTE INVENTARIO -->
+            <input type="text" id="buscarInventario" class="form-control mb-3" placeholder="Buscar producto...">
+
+            <form class="row g-2 mb-3" action="/agregar" method="POST">
+                <div class="col-md-4">
+                    <input type="text" name="nombre" class="form-control" placeholder="Nombre del producto" required>
+                </div>
+                <div class="col-md-3">
+                    <input type="number" name="cantidad" class="form-control" placeholder="Cantidad" min="0" required>
+                </div>
+                <div class="col-md-3">
+                    <input type="number" step="0.01" name="precio" class="form-control" placeholder="Precio" min="0" required>
+                </div>
+                <div class="col-md-2 d-grid">
+                    <button class="btn btn-success">Agregar</button>
+                </div>
+            </form>
+
+            <a href="{{ url_for('exportar_excel_inventario') }}" class="btn btn-outline-primary btn-sm mb-3">
+                Exportar inventario a Excel
+            </a>
+
+            <div class="table-responsive">
+                <table class="table table-striped table-hover text-center">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Precio</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for p in productos %}
+                        <tr class="fila-inventario" data-nombre="{{ p[1] | lower }}">
+                            <td>{{ p[0] }}</td>
+                            <td>{{ p[1] }}</td>
+                            <td>{{ p[2] }}</td>
+                            <td>${{ "%.2f"|format(p[3]) }}</td>
+                            <td>
+                                <a href="{{ url_for('editar_producto', id=p[0]) }}" class="btn btn-warning btn-sm">Editar</a>
+                                <a href="{{ url_for('eliminar', id=p[0]) }}" class="btn btn-danger btn-sm"
+                                   onclick="return confirm('¿Eliminar producto?');">Eliminar</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- REGISTRAR VENTA -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">Registrar venta</h5>
+        </div>
+        <div class="card-body">
+
+            <!-- BUSCADOR INTELIGENTE VENTAS -->
+            <input type="text" id="buscarVenta" class="form-control mb-3" placeholder="Buscar producto para vender...">
+
+            <form action="/venta" method="POST">
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <input type="text" name="cliente" class="form-control" placeholder="Nombre del cliente" required>
+                    </div>
+                </div>
+
+                <div class="table-responsive mb-3">
+                    <table class="table table-bordered text-center">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Stock</th>
+                                <th>Precio</th>
+                                <th>Cantidad a vender</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for p in productos %}
+                            <tr class="fila-venta" data-nombre="{{ p[1] | lower }}">
+                                <td>
+                                    {{ p[1] }}
+                                    <input type="hidden" name="id_producto[]" value="{{ p[0] }}">
+                                </td>
+                                <td>{{ p[2] }}</td>
+                                <td>${{ "%.2f"|format(p[3]) }}</td>
+                                <td>
+                                    <input type="number" name="cantidad_vender[]" class="form-control"
+                                           min="0" max="{{ p[2] }}">
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="row g-2 mb-3">
+                    <div class="col-md-4">
+                        <select name="estado_pago" class="form-select">
+                            <option value="Pagado">Pagado</option>
+                            <option value="Pendiente">Pendiente</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <input type="datetime-local" name="fecha_pago" class="form-control">
+                    </div>
+                </div>
+
+                <button class="btn btn-primary">Registrar venta</button>
+            </form>
+
+        </div>
+    </div>
+
+    <!-- HISTORIAL DE VENTAS -->
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Historial de ventas</h5>
+        </div>
+        <div class="card-body">
+
+            <form class="row g-2 mb-3" action="/buscar_ventas" method="GET">
+                <div class="col-md-6">
+                    <input type="text" name="cliente" class="form-control"
+                           placeholder="Buscar por cliente" value="{{ cliente_busqueda or '' }}">
+                </div>
+                <div class="col-md-2 d-grid">
+                    <button class="btn btn-secondary">Buscar</button>
+                </div>
+                <div class="col-md-2 d-grid">
+                    <a href="{{ url_for('inicio') }}" class="btn btn-outline-secondary">Ver todas</a>
+                </div>
+            </form>
+
+            <div class="mb-3">
+                <a href="{{ url_for('imprimir_ventas') }}" class="btn btn-outline-dark btn-sm" target="_blank">
+                    Imprimir historial
+                </a>
+                <a href="{{ url_for('exportar_excel_ventas') }}" class="btn btn-outline-success btn-sm">
+                    Exportar a Excel
+                </a>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-striped table-hover text-center">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Fecha</th>
+                            <th>Cliente</th>
+                            <th>Productos</th>
+                            <th>Total</th>
+                            <th>Estado</th>
+                            <th>Fecha pago</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for v in ventas %}
+                        <tr>
+                            <td>{{ v[0] }}</td>
+                            <td>{{ v[1] }}</td>
+                            <td>{{ v[2] }}</td>
+                            <td>{{ v[3] }}</td>
+                            <td>${{ "%.2f"|format(v[4]) }}</td>
+                            <td>{{ v[5] }}</td>
+                            <td>{{ v[6] or "" }}</td>
+                            <td>
+                                {% if v[5] != "Pagado" %}
+                                <form action="{{ url_for('marcar_pagado', id=v[0]) }}" method="POST">
+                                    <button class="btn btn-success btn-sm">Marcar pagado</button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SCRIPTS DE BUSQUEDA INTELIGENTE -->
+    <script>
+        // INVENTARIO
+        document.getElementById("buscarInventario").addEventListener("input", function() {
+            let filtro = this.value.toLowerCase();
+            let filas = document.querySelectorAll(".fila-inventario");
+
+            filas.forEach(fila => {
+                let nombre = fila.getAttribute("data-nombre");
+                fila.style.display = nombre.includes(filtro) ? "" : "none";
+            });
+        });
+
+        // REGISTRAR VENTA
+        document.getElementById("buscarVenta").addEventListener("input", function() {
+            let filtro = this.value.toLowerCase();
+            let filas = document.querySelectorAll(".fila-venta");
+
+            filas.forEach(fila => {
+                let nombre = fila.getAttribute("data-nombre");
+                fila.style.display = nombre.includes(filtro) ? "" : "none";
+            });
+        });
+    </script>
+
+</body>
+</html>

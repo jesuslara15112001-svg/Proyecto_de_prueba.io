@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Imprimir historial de ventas</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #000; padding: 6px; font-size: 12px; }
+        th { background: #eee; }
+        @media print { button { display: none; } }
+    </style>
+</head>
+<body>
+
+    <h2>Historial de ventas</h2>
+
+    <button onclick="window.print()">Imprimir</button>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Fecha</th>
+                <th>Cliente</th>
+                <th>Productos</th>
+                <th>Total</th>
+                <th>Estado</th>
+                <th>Fecha pago</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for v in ventas %}
+            <tr>
+                <td>{{ v[0] }}</td>
+                <td>{{ v[1] }}</td>
+                <td>{{ v[2] }}</td>
+                <td>{{ v[3] }}</td>
+                <td>${{ "%.2f"|format(v[4]) }}</td>
+                <td>{{ v[5] }}</td>
+                <td>{{ v[6] or "" }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+</body>
+</html>
